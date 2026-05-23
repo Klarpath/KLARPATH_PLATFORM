@@ -1,0 +1,30 @@
+{
+  "name": "klarpath-crm-app",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "prisma db push --schema=../schema.prisma && next start -p 3000",
+    "seed": "prisma db push --schema=../schema.prisma && node prisma/seed.js",
+    "db:push": "prisma db push --schema=../schema.prisma",
+    "prisma:generate": "prisma generate --schema=../schema.prisma",
+    "postinstall": "prisma generate --schema=../schema.prisma"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "axios": "^1.4.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "typescript": "^5.0.0"
+  }
+}
