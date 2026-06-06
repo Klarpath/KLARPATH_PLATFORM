@@ -1,0 +1,327 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUM types
+enum AdminRole {
+  superadmin
+  moderator
+}
+
+enum BusinessStatus {
+  active
+  suspended
+  closed
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+  past_due
+  trialing
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+}
+
+enum MessageSenderType {
+  client
+  business
+}
+
+enum EmailType {
+  booking_confirmation
+  booking_reminder
+  booking_cancellation
+  status_update
+  message_notification
+}
+
+enum PaymentStatus {
+  succeeded
+  failed
+  pending
+}
+
+enum BusinessOwnerRole {
+  owner
+  manager
+  staff
+}
+
+enum EmailStatus {
+  pending
+  sent
+  failed
+}
+
+enum UserType {
+  admin
+  business_owner
+}
+
+// Models
+model Admin {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  password_hash String
+  role      AdminRole @default(moderator)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("admins")
+}
+
+model Plan {
+  id              String  @id @default(uuid()) @db.Uuid
+  name            String  @unique
+  price_monthly   Decimal? @db.Decimal(10, 2)
+  price_annually  Decimal? @db.Decimal(10, 2)
+  max_clients     Int     @default(100)
+  sms_enabled     Boolean @default(false)
+  api_access      Boolean @default(false)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  subscriptions   Subscription[]
+
+  @@map("plans")
+}
+
+model Business {
+  id              String  @id @default(uuid()) @db.Uuid
+  name            String
+  email           String  @unique
+  phone           String?
+  logo_url        String? @db.Text
+  website_url     String? @db.Text
+  subdomain       String  @unique
+  custom_domain   String? @unique
+  industry        String? @default("hvac")
+  business_address String? @db.Text
+  business_hours  Json?   @db.JsonB
+  timezone        String  @default("UTC")
+  payment_method_id String?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  status          BusinessStatus @default(active)
+  business_owners BusinessOwner[]
+  subscriptions   Subscription[]
+  clients         Client[]
+  services        Service[]
+  availability    Availability[]
+  availability_exceptions AvailabilityException[]
+  bookings        Booking[]
+  messages        Message[]
+  email_queue     EmailQueue[]
+  payments        Payment[]
+  audit_log       AuditLog[]
+
+  @@map("businesses")
+}
+
+model Subscription {
+  id              String  @id @default(uuid()) @db.Uuid
+  business_id     String  @db.Uuid
+  plan_id         String  @db.Uuid
+  stripe_subscription_id String?
+  status          SubscriptionStatus @default(trialing)
+  start_date      DateTime @db.Date
+  end_date        DateTime? @db.Date
+  renewal_date    DateTime? @db.Date
+  auto_renew      Boolean @default(true)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  business        Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  plan            Plan @relation(fields: [plan_id], references: [id])
+  payments        Payment[]
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id              String  @id @default(uuid()) @db.Uuid
+  business_id     String  @db.Uuid
+  subscription_id String? @db.Uuid
+  stripe_payment_intent_id String?
+  amount          Decimal @db.Decimal(10, 2)
+  status          PaymentStatus @default(pending)
+  invoice_number  String? @unique
+  invoice_url     String? @db.Text
+  paid_at         DateTime? @db.Timestamp(6)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  business        Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  subscription    Subscription? @relation(fields: [subscription_id], references: [id])
+
+  @@map("payments")
+}
+
+model BusinessOwner {
+  id          String  @id @default(uuid()) @db.Uuid
+  business_id String  @db.Uuid
+  email       String
+  password_hash String
+  first_name  String?
+  last_name   String?
+  role        BusinessOwnerRole @default(owner)
+  phone       String?
+  is_active   Boolean @default(true)
+  last_login  DateTime? @db.Timestamp(6)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@map("business_owners")
+  @@unique([business_id, email])
+}
+
+model Client {
+  id          String  @id @default(uuid()) @db.Uuid
+  business_id String  @db.Uuid
+  first_name  String
+  last_name   String
+  email       String?
+  phone       String?
+  address     String? @db.Text
+  city        String?
+  postcode    String?
+  lifetime_value Decimal @default(0.00) @db.Decimal(10, 2)
+  notes       String? @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+  messages    Message[]
+
+  @@map("clients")
+  @@unique([business_id, email])
+}
+
+model Service {
+  id          String  @id @default(uuid()) @db.Uuid
+  business_id String  @db.Uuid
+  name        String
+  description String? @db.Text
+  duration_minutes Int @default(60)
+  price       Decimal? @db.Decimal(10, 2)
+  is_active   Boolean @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+
+  @@map("services")
+}
+
+model Availability {
+  id          String  @id @default(uuid()) @db.Uuid
+  business_id String  @db.Uuid
+  day_of_week Int     @default(0)
+  start_time  DateTime @db.Time(0)
+  end_time    DateTime @db.Time(0)
+  is_recurring Boolean @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+model AvailabilityException {
+  id          String  @id @default(uuid()) @db.Uuid
+  business_id String  @db.Uuid
+  date        DateTime @db.Date
+  start_time  DateTime @db.Time(0)
+  end_time    DateTime @db.Time(0)
+  reason      String?
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@map("availability_exceptions")
+}
+
+model Booking {
+  id              String  @id @default(uuid()) @db.Uuid
+  business_id     String  @db.Uuid
+  client_id       String  @db.Uuid
+  service_id      String  @db.Uuid
+  booked_at       DateTime @db.Timestamp(6)
+  duration_minutes Int?
+  status          BookingStatus @default(pending)
+  notes           String? @db.Text
+  reminder_sent_at DateTime? @db.Timestamp(6)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @default(now()) @db.Timestamp(6)
+  business        Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  client          Client @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  service         Service @relation(fields: [service_id], references: [id])
+  email_queue     EmailQueue[]
+
+  @@map("bookings")
+}
+
+model Message {
+  id          String  @id @default(uuid()) @db.Uuid
+  business_id String  @db.Uuid
+  client_id   String  @db.Uuid
+  sender_type MessageSenderType
+  sender_id   String? @db.Uuid
+  content     String  @db.Text
+  is_read     Boolean @default(false)
+  read_at     DateTime? @db.Timestamp(6)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  client      Client @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  business_owner BusinessOwner? @relation(fields: [sender_id], references: [id])
+
+  @@map("messages")
+}
+
+model EmailQueue {
+  id              String  @id @default(uuid()) @db.Uuid
+  business_id     String  @db.Uuid
+  recipient_email String
+  email_type      EmailType
+  subject         String
+  body            String  @db.Text
+  booking_id      String? @db.Uuid
+  status          EmailStatus @default(pending)
+  retry_count     Int     @default(0)
+  error_message   String? @db.Text
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  sent_at         DateTime? @db.Timestamp(6)
+  business        Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  booking         Booking? @relation(fields: [booking_id], references: [id])
+
+  @@map("email_queue")
+}
+
+model AuditLog {
+  id          String  @id @default(uuid()) @db.Uuid
+  user_id     String?
+  user_type   UserType
+  action      String
+  resource_type String
+  resource_id String?
+  old_value   Json?   @db.JsonB
+  new_value   Json?   @db.JsonB
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  business_id String? @db.Uuid
+  business    Business? @relation(fields: [business_id], references: [id], onDelete: SetNull)
+
+  @@map("audit_log")
+}
