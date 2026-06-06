@@ -1,0 +1,72 @@
+{
+  "node": {
+    "c0c9bcc942858df155e94c08e67db6882906d533bd": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 51598,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/admin/dashboard/page": {
+          "moduleId": 98670,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/admin/login/page": {
+          "moduleId": 69150,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/admin/page": {
+          "moduleId": 71456,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/dashboard/page": {
+          "moduleId": 54103,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/login/page": {
+          "moduleId": 56232,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/page": {
+          "moduleId": 77181,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        },
+        "app/register/page": {
+          "moduleId": 37943,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/layout.tsx"
+        }
+      },
+      "filename": "app/layout.tsx",
+      "exportedName": "$$RSC_SERVER_CACHE_0"
+    },
+    "80bc486a330e21ca59cc4486d2cbdfb05dd3dc00d7": {
+      "workers": {
+        "app/page": {
+          "moduleId": 77181,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_CACHE_0",
+          "filename": "app/page.tsx"
+        }
+      },
+      "filename": "app/page.tsx",
+      "exportedName": "$$RSC_SERVER_CACHE_0"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "/I+ZYPTY/f/HgZQdR1L0zyDmDDhIOoBrYdpRqX1qOa8="
+}
